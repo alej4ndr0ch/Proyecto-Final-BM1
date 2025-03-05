@@ -2,6 +2,7 @@ import User from './user.model.js'
 import { hash, verify } from 'argon2'
 import { generateJWT } from '../helpers/generate-jwt.js'
 import { response, request } from 'express'
+import argon2 from 'argon2';
 
 export const login = async (req, res) => {
 
@@ -231,33 +232,49 @@ export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         const { password } = req.body;
-        
-        if(!password) {
+
+        if (!password) {
             return res.status(400).json({
                 success: false,
                 msg: 'Error, la contraseña es obligatoria para desactivar un usuario'
             });
         }
-        
-        const user = await User.findByIdAndUpdate(id, { estado: false }, { new: true });
-        const authenticatedUser = req.user;
+
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                msg: 'Usuario no encontrado'
+            });
+        }
+
+        const isMatch = await argon2.verify(user.password, password);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                msg: 'Contraseña incorrecta'
+            });
+        }
+
+        user.estado = false;
+        await user.save();
 
         return res.status(200).json({
             success: true,
-            msg: 'Usuario desactivado',
-            user,
-            authenticatedUser
+            msg: 'Usuario desactivado correctamente',
+            user
         });
 
     } catch (error) {
         return res.status(500).json({
             success: false,
             msg: 'Error al desactivar usuario',
-            error
+            error: error.message
         });
     }
 };
-
 
 export const createAddAdmin = async () => {
     try {

@@ -15,7 +15,13 @@ const cartshopSchema = Schema({
             },
             precio: {
                 type: Number,
-                required: true
+                required: true,
+                default: 0
+            },
+            cantidad: {
+                type: Number,
+                required: true,
+                default: 1
             }
         }
     ],
